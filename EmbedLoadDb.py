@@ -9,6 +9,8 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Chroma
+from dotenv import load_dotenv
+import os
 #import openai
 
 ###################################
@@ -20,6 +22,8 @@ from langchain.vectorstores import Chroma
 # - how to cache openAI embeddings#
 ###################################
 
+load_dotenv()
+
 def split_docs(documents,chunk_size=1000,chunk_overlap=250):
   text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
   docs = text_splitter.create_documents(documents)
@@ -29,7 +33,7 @@ def split_docs(documents,chunk_size=1000,chunk_overlap=250):
 text = read_file('the-fast-and-the-furious-2001/rev2_manual_the-fast-and-the-furious-2001')
 docs = split_docs([text])
 model_id = "text-embedding-ada-002"
-open_ai_key = os.environ.get('OPENAI_API_KEY')
+open_ai_key = os.getenv('OPENAI_API_KEY')
 embeddings = OpenAIEmbeddings(openai_api_key=open_ai_key)
 # caching
 fs = LocalFileStore("./cache/embeddings/")
@@ -42,18 +46,6 @@ db = Chroma.from_documents(documents = docs,
                            collection_name = 'fast-and-furious',
                            persist_directory = './cache/chroma/',
                            )
-query = "what happens in the first scene when Brian meets Dom?"
-# matching_docs = db.similarity_search(query)
-# for d in matching_docs:
-#     print("*" * 30)
-#     print(d.page_content.strip())
-
-
-#llm = ChatOpenAI(temperature=0, openai_api_key=open_ai_key)
-#qa = ConversationalRetrievalChain.from_llm(promptedLLM, db.as_retriever())
-#qa({"question": user_message, "chat_history": history})
-#chat_history = []
-#response = qa({'question': query, 'chat_history': chat_history})
 
 prompt_template = '''
 Given the following extracted parts of the movie script from the fast and the furious and a question regarding the movie, answer the question based on the context you have received.
@@ -86,6 +78,7 @@ qa = RetrievalQA.from_chain_type(
     chain_type_kwargs=chain_type_kwargs
 )
 
+query = "what happens in the first scene when Brian meets Dom?"
 response = qa.run(query)
 print(response)
 
